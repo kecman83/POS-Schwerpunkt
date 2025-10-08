@@ -713,6 +713,7 @@ public class SalatHersteller {
 
 ```
 
+![alt text](POS-Schwerpunkt.png)
 _Strukturmuster_
 
 Erleichtern den Entwurf von Software durch vorgefertigte Schablonen für Beziehungen zwischen Klassen. Erklären Sie, wie Sie Objekte und Klassen zu größeren Strukturen zusammenfügen und dabei die Flexibilität und Effizienz dieser Strukturen wahren.
@@ -720,6 +721,16 @@ Erleichtern den Entwurf von Software durch vorgefertigte Schablonen für Beziehu
     - Dekodierer
     - Adapter
     - ...
+
+**Dekodierer**
+
+Das Muster ist eine flexible Alternative zur Unterklassenbildung, um eine Klasse um zusätzliche Funktionalitäten zu erweitern.
+
+```java
+
+```
+
+**Adapter**
 
 _Verhaltensmuster_
 
