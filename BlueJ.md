@@ -727,8 +727,77 @@ Erleichtern den Entwurf von Software durch vorgefertigte Schablonen für Beziehu
 Das Muster ist eine flexible Alternative zur Unterklassenbildung, um eine Klasse um zusätzliche Funktionalitäten zu erweitern.
 
 ```java
+public class Main {
+    public static void main(String[] args) {
+        //Dekoratoer erzugt neuen Objekt der supdekorator ist und hat als parameter normale message
+        AlarmDekorator a = new AmokAlarmDekorator(new StandardAlarm("Amokkkkkkk"));
+        System.out.println(a.alarm());
+    }
+}
+
+public interface Alarm {
+    //Notifier
+    String alarm();
+}
+
+public class StandardAlarm implements Alarm{
+
+    private String alarmName;
+
+    /**
+     * Konstructor
+     * @param alarmName
+     */
+    public StandardAlarm(String alarmName){
+        this.alarmName = alarmName;
+    }
+    /**
+     *
+     * @return diese nachricht zurück
+     */
+    @Override
+    public String alarm() {
+        return this.alarmName;
+    }
+}
+public class AlarmDekorator implements Alarm{
+    /**
+     * Data feld von Object Alarm als wraper
+     */
+    private Alarm wrappee;
+    public AlarmDekorator(Alarm wrappee){
+        this.wrappee = wrappee;
+    }
+
+    /**
+     *
+     * @return wrappee alarm
+     */
+    @Override
+    public String alarm() {
+        return wrappee.alarm();
+    }
+}
+
+public class AmokAlarmDekorator extends AlarmDekorator{
+
+    public AmokAlarmDekorator(Alarm wrappee){
+        super(wrappee);
+    }
+
+    /**
+     *
+     * @return wraper alarm
+     */
+    @Override
+    public String alarm() {
+        return super.alarm();
+    }
+}
 
 ```
+
+![alt text](Dekorator.png)
 
 **Adapter**
 
