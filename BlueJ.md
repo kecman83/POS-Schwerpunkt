@@ -596,3 +596,136 @@ Prinzipien vergleich:
 | **SOLID** | 5 OO-Design-Prinzipien   | Strukturierte, flexible Architektur |
 
 ![alt text](image.png)
+
+## ENTWURFSMUSTER
+
+Muster sind ein Werkzeugkasten mit Lösungen für häufige Probleme im Softwaredesign. Sie definieren eine gemeinsame Sprache, die Ihrem Team hilft, effizienter zu kommunizieren.
+Designmuster unterscheiden sich in ihrer Komplexität, ihrem Detaillierungsgrad und ihrem Anwendungsbereich. Darüber hinaus können sie nach ihrer Absicht kategorisiert und in drei Gruppen unterteilt werden:
+
+Verschiedene Typen von Entwurfsmustern:
+
+    - Erzeugungsmuster (Creational Patterns)
+    - Strukturmuster (Structural Patterns)
+    - Verhaltensmuster (Behavioral Patterns)
+
+_Erzeugungsmuster_
+
+Stellen Sie Mechanismen zur Objekterstellung bereit, die die Flexibilität und Wiederverwendung vorhandenen Codes erhöhen. Implementierung gemäß der Regel: **_„Programmiere auf die Schnittstelle, nicht auf die Implementierung!“_**
+
+    - Builder
+    - ...
+
+**Builder**
+
+Das Builder-Pattern wird genutzt, wenn die Konstruktion eines komplexen Objektes von seiner Repräsentation getrennt werden soll. Das Objekt (**Salat**) konstruiert sich also nicht selber, sondern wird von einem anderen Objekt (**SalatMachen**) erbaut.
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        //neuen objekt erstellen von typ CesarSalat
+        SalatMachen hersteller = new CesarSalat();
+        //neuen objekt erstellen von typ SalatHersteller und als parametar CesarSalat eingeben
+        SalatHersteller macher = new SalatHersteller(hersteller);
+        //aufruf von Objekt klasse
+        macher.salatRichten();
+        //Objekt wert zuweisen über methode
+        Salat salat = macher.getSalat();
+        System.out.println(salat);
+    }
+}
+
+public class Salat {
+    //daten felder
+    private String gemuese;
+    private String dressing;
+    private String gewuerze;
+    private String beilage;
+
+    //set methoden für data felder
+    public void setGemuese(String gemuese) {
+        this.gemuese = gemuese;
+    }
+    public void setDressing(String dressing){
+        this.dressing = dressing;
+    }
+    public void setGewuerze(String gewuerze){
+        this.gewuerze = gewuerze;
+    }
+    public void setBeilage(String beilage){
+        this.beilage = beilage;
+    }
+    //ausgabe als String überschreiben
+    @Override
+    public String toString() {
+        return "Salat: salat ist: " + this.gemuese + ", dressing ist: "+ this.dressing + ", gewuerze sind: "+this.gewuerze + " und beilage sind: "+this.beilage;
+    }
+}
+//interface erstellen mit methoden die wir brauchen um Objecte zu BUILDEN
+public interface SalatMachen {
+    void gemueseSchneiden();
+    void dressingVorbereiten();
+    void gewuerzeRichten();
+    void beilageReintun();
+    //gib ergebni wieder zurick
+    Salat getSalat();
+}
+//Spetziefisches object implements interface
+public class CesarSalat implements SalatMachen{
+    private Salat salat;
+    //Konstruktor um neue Objekt zu erzeugen
+    public CesarSalat(){
+        this.salat = new Salat();
+    }
+    public void gemueseSchneiden(){
+        salat.setGemuese("Gruene Salat");
+    }
+    public void dressingVorbereiten(){
+        salat.setDressing("Cieser dressing");
+    }
+    public void gewuerzeRichten(){
+        salat.setGewuerze("Saltz und Pepper");
+    }
+    public void beilageReintun(){
+        salat.setBeilage("Hendel");
+    }
+    public Salat getSalat(){
+        return this.salat;
+    }
+}
+//Objekt gib komand für herstellen
+public class SalatHersteller {
+    private SalatMachen hersteller;
+
+    public SalatHersteller(SalatMachen hersteller) {
+        this.hersteller = hersteller;
+    }
+    //ruft intarace methoden
+    public void salatRichten() {
+        hersteller.gemueseSchneiden();
+        hersteller.dressingVorbereiten();
+        hersteller.gewuerzeRichten();
+        hersteller.beilageReintun();
+    }
+    public Salat getSalat() {
+        return hersteller.getSalat();
+    }
+}
+
+```
+
+_Strukturmuster_
+
+Erleichtern den Entwurf von Software durch vorgefertigte Schablonen für Beziehungen zwischen Klassen. Erklären Sie, wie Sie Objekte und Klassen zu größeren Strukturen zusammenfügen und dabei die Flexibilität und Effizienz dieser Strukturen wahren.
+
+    - Dekodierer
+    - Adapter
+    - ...
+
+_Verhaltensmuster_
+
+Modellieren komplexes Verhalten der Software. Kümmern sich um eine effektive Kommunikation, erhöhen damit die Flexibilität und die Zuweisung von Verantwortlichkeiten zwischen Objekten.
+
+    - Chain of Responsibility
+    - TemplateMethod
+    - Observer
+    - ...
