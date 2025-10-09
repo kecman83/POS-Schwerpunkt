@@ -789,11 +789,25 @@ public class AmokAlarmDekorator extends AlarmDekorator{
      *
      * @return wraper alarm
      */
+
     @Override
     public String alarm() {
-        return super.alarm();
+        return "AMOK ALARM: " + super.alarm().toUpperCase() + " 🚨";
     }
 }
+
+public class FuererAlarmDekorator extends AlarmDekorator{
+
+    public FuererAlarmDekorator(Alarm wrappee){
+        super(wrappee);
+    }
+
+    @Override
+    public String alarm() {
+        return " FUERER ALARM "+super.alarm();
+    }
+}
+
 
 ```
 
@@ -809,3 +823,9 @@ Modellieren komplexes Verhalten der Software. Kümmern sich um eine effektive Ko
     - TemplateMethod
     - Observer
     - ...
+
+**Chain of Responsibility**
+
+**TemplateMethod**
+
+**Observer**
