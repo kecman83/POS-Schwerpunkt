@@ -1004,4 +1004,143 @@ public class LisingInfo implements BankInfo{
 ![Chain of Responsibility UML](COR.png)
 **TemplateMethod**
 
+Die Schablonenmethode (englisch template method pattern) ist ein in der Softwareentwicklung eingesetztes Entwurfsmuster, mit dem Teilschritte eines Algorithmus variabel gehalten werden können.
+
+Beim Schablonenmethoden-Entwurfsmuster wird in einer abstrakten Klasse das Skelett eines Algorithmus definiert. Die konkrete Ausformung der einzelnen Schritte wird an Unterklassen delegiert.Dadurch besteht die Möglichkeit, einzelne Schritte des Algorithmus zu verändern oder zu überschreiben, ohne dass die zu Grunde liegende Struktur des Algorithmus modifiziert werden muss. Die Schablonenmethode ruft abstrakte Methoden auf, die erst in den Unterklassen definiert werden. Diese Methoden werden auch als Einschubmethoden bezeichnet.
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        //herstellen von objecte
+        FlugReise prio = new PriorityFlug();
+        FlugReise eco = new EconomicFlug();
+        // hautp methode aufrufen
+        prio.flugReise();
+        eco.flugReise();
+    }
+}
+
+public abstract class FlugReise {
+    //in diese methode werden alle untere methode ausgefürt
+    public final void flugReise(){
+        checkIn();
+        sicherheitCheck();
+        bording();
+        flug();
+        gepaeckAbholen();
+    }
+    //nechte 3 methoden sind gleich für allen anderen klassen
+    private void checkIn(){
+        System.out.println("Bitte eure Dockumente zeigen!");
+    }
+    private void flug(){
+        System.out.println("6 Std. flig Zeit!!");
+    }
+    private void gepaeckAbholen(){
+        System.out.println("Bitte nehmen Sie euren Gepäck!!!!");
+    }
+    //diese zwei methode sind bei sub klassen unterschiedlich
+    public abstract void sicherheitCheck();
+    public abstract void bording();
+}
+
+public class PriorityFlug extends FlugReise{
+    //implementiere 2 methode die sind untersceiden
+    public void sicherheitCheck(){
+        System.out.println("Bitte alle Pasagiere mit Priority pass zu kontrolle");
+    }
+    public void bording(){
+        System.out.println("Bitte alle Pasagiere mit Priority pass ins Flieger zu steigen");
+    }
+}
+
+public class EconomicFlug extends FlugReise{
+    public void sicherheitCheck(){
+        //implementiere 2 methode die sind untersceiden
+        System.out.println("Bitte alle Pasagiere mit Economic pass platz für Pasagiere mit Priority pass zu machen, dann sin sie dran");
+    }
+    public void bording(){
+        System.out.println("Bitte alle Pasagiere mit Economic pass ins Flieger zu steigen");
+    }
+}
+```
+
+![TemplateMethod UML](TM.png)
+
 **Observer**
+
+dient der Weitergabe von Änderungen an einem Objekt an von diesem Objekt abhängige Strukturen.
+
+Allgemein finden Beobachter-Muster Anwendung, wenn eine Abstraktion mehrere Aspekte hat, die von einem anderen Aspekt derselben Abstraktion abhängen, wo Änderung eines Objekts Änderungen an anderen Objekten nach sich zieht oder ein Objekt andere Objekte benachrichtigen soll, ohne diese im Detail zu kennen.
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        // object aucion tag erstellen
+        AuctionsTag acTag = new AuctionsTag();
+        //aauctionen für mobitel und web erstellen
+        Auction mobil = new MobileAuction();
+        Auction web =  new WebAuction();
+        //sie ins Liste hinzufigen
+        acTag.autoHinzufuegen(mobil);
+        acTag.autoHinzufuegen(web);
+        //informationen erstellen
+        System.out.println("Erste Auction");
+        acTag.setInfo("VW","ID3",45990.90);
+
+        System.out.println("Zweite Auction");
+        acTag.setInfo("BMW","M135XDrive",65000.00);
+    }
+}
+
+public interface Auction {
+    void update(String autoMarke, String autoModel, double preis);
+}
+
+public interface AutoAuction {
+    void autoHinzufuegen( Auction auct);
+    void autoEntfernen(Auction auct);
+    void information();
+}
+
+import java.util.ArrayList;
+
+public class AuctionsTag implements AutoAuction{
+    private ArrayList<Auction>  auctions = new ArrayList<>();
+    private String autoMarke, autoModel;
+    private double preis;
+
+    public void autoHinzufuegen( Auction auct){
+        auctions.add(auct);
+    }
+    public void autoEntfernen(Auction auct){
+        auctions.remove(auct);
+    }
+    public void information(){
+        for( Auction auction : auctions ){
+            auction.update(autoMarke, autoModel, preis);
+        }
+    }
+
+    public void setInfo(String autoMarke, String autoModel, double preis){
+        this.autoMarke = autoMarke;
+        this.autoModel = autoModel;
+        this.preis = preis;
+        information();
+    }
+}
+
+public class MobileAuction implements Auction {
+    public void update(String autoMarke, String autoModel, double preis){
+        System.out.println("Handy -> Auto Marke: "+autoMarke+" Auto Model: "+autoModel+" Preis: "+preis );
+    }
+}
+
+public class WebAuction implements Auction {
+    public void update(String autoMarke, String autoModel, double preis){
+        System.out.println("WebApp -> Auto Marke: "+autoMarke+" Auto Model: "+autoModel+" Preis: "+preis );
+    }
+}
+```
+
+![Observer UML]()
