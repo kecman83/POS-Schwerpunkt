@@ -595,7 +595,7 @@ Prinzipien vergleich:
 | **YAGNI** | You Aren’t Gonna Need It | Kein unnötiger Funktionsumfang      |
 | **SOLID** | 5 OO-Design-Prinzipien   | Strukturierte, flexible Architektur |
 
-![alt text](image.png)
+![SOLID + KISS + DRY + YAGNI](image.png)
 
 ## ENTWURFSMUSTER
 
@@ -713,7 +713,7 @@ public class SalatHersteller {
 
 ```
 
-![alt text](POS-Schwerpunkt.png)
+![Builder UML](POS-Schwerpunkt.png)
 _Strukturmuster_
 
 Erleichtern den Entwurf von Software durch vorgefertigte Schablonen für Beziehungen zwischen Klassen. Erklären Sie, wie Sie Objekte und Klassen zu größeren Strukturen zusammenfügen und dabei die Flexibilität und Effizienz dieser Strukturen wahren.
@@ -811,9 +811,67 @@ public class FuererAlarmDekorator extends AlarmDekorator{
 
 ```
 
-![alt text](Dekorator.png)
+![Dekodierer UML](Dekorator.png)
 
 **Adapter**
+
+Der Adapter findet Anwendung, wenn eine existierende Klasse verwendet werden soll, deren Schnittstelle nicht der benötigten Schnittstelle entspricht. Dies tritt insbesondere dann auf, wenn Klassen, die zur Wiederverwendung konzipiert wurden. Diese stellen ihre Dienste durch klar definierte Schnittstellen zur Verfügung, die in der Regel nicht geändert werden sollen und häufig auch nicht geändert werden können, da sie von Dritten stammen.
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        //erzeugen von Serbisch sprecher objekt
+        SerbischSprecher srbin = new SerbischSprecher();
+        //objekt übersetzer erzeugen
+        Uebersetzer uebersetzer = new SerbischToDeutschUebersetzen(srbin);
+        //gsesprech objekt erzeugen
+        Gesprech gesprech = new Gesprech(uebersetzer);
+        //aufruf von übersetz methode
+        gesprech.ubersetzen();
+    }
+}
+public interface Uebersetzer {
+    void uebersetz();
+}
+
+//klasse über nur serbisch sprecher
+public class SerbischSprecher {
+    public void sprichSerbisch(){
+        System.out.println("Ich spreche nur serbisch");
+    }
+}
+
+//klasse soll von serbisch auf deutsch übersetzen
+public class SerbischToDeutschUebersetzen implements Uebersetzer{
+    private SerbischSprecher srb;
+
+    public SerbischToDeutschUebersetzen(SerbischSprecher srb){
+        this.srb = srb;
+    }
+
+    /**
+     * Methode die als adapter genutzt wird für übersetzung von
+     * serbisch auf deutch
+     */
+    public void uebersetz(){
+        this.srb.sprichSerbisch();
+    }
+}
+
+public class Gesprech {
+    private Uebersetzer uebersetzen;
+
+    public Gesprech(Uebersetzer uebersetzen) {
+        this.uebersetzen = uebersetzen;
+    }
+    public void  ubersetzen(){
+        this.uebersetzen.uebersetz();
+    }
+}
+
+```
+
+![Adapter UML](GitHub.png)
 
 _Verhaltensmuster_
 
@@ -826,6 +884,124 @@ Modellieren komplexes Verhalten der Software. Kümmern sich um eine effektive Ko
 
 **Chain of Responsibility**
 
+Mehrere Objekte werden hintereinander geschaltet (miteinander verkettet), um gemeinsam eine eingehende Anfrage bearbeiten zu können. Diese Anfrage wird an der Kette entlang geleitet, bis eines der Objekte die Anfrage beantworten kann. Der Klient, von dem die Anfrage ausgeht, hat dabei keine Kenntnis darüber, von welchem Objekt die Anfrage beantwortet werden wird.
+
+Es muss sichergestellt werden, dass jeder Bearbeiter in der Kette nur einmal vorkommt, sonst entstehen Kreise und das Programm bleibt in einer Endlosschleife hängen.
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        //von jede einzelne klasse objekt erstellen
+        BankInfo kontoInfo = new KontoTarifInfo();
+        BankInfo creditInfo = new CreditCardInfo();
+        BankInfo lisingInfo = new LisingInfo();
+        //metode setNext aufrufen
+        kontoInfo.setNextInfo(creditInfo);
+        creditInfo.setNextInfo(lisingInfo);
+        //<unterschiedliche szenarien
+        System.out.println("Interesse an Konto tarifen info");
+        kontoInfo.infoFragen("Konto tarifen info");
+        System.out.println();
+        System.out.println("Interesse an Credit Card info");
+        kontoInfo.infoFragen("Credit Card info");
+        System.out.println();
+        System.out.println("Interesse an Lising Info");
+        kontoInfo.infoFragen("Lising Info");
+    }
+}
+
+public interface BankInfo {
+    void setNextInfo(BankInfo bankInfo);
+    void infoFragen(String frage);
+}
+
+public class KontoTarifInfo implements BankInfo{
+    private BankInfo bankInfo;
+
+    /**
+     *
+     * @param bankInfo weche klasse ist nexte
+     */
+    public void setNextInfo(BankInfo bankInfo){
+        this.bankInfo = bankInfo;
+    }
+
+    /**
+     *
+     * @param frage als String übernimt problem
+     * Wenn problem diese klasse lösen kann dann gibt sie ergebnis
+     * wenn nicht gibt sie an weitere klasse an
+     */
+    @Override
+    public void infoFragen(String frage) {
+        if(frage.equalsIgnoreCase("Konto tarifen info")){
+            System.out.println("Es gibt so vielen Konto Tarifen");
+        }
+        else{
+            System.out.println("KontoTarifInfo: Frage nicht beanwortet - weiter an  CrditCardInfo");
+            if(bankInfo != null){
+                bankInfo.infoFragen(frage);
+            }
+        }
+
+    }
+}
+
+public class CreditCardInfo implements BankInfo{
+
+    private BankInfo bankInfo;
+    /**
+     *
+     * @param bankInfo weche klasse ist nexte
+     */
+    public void setNextInfo(BankInfo bankInfo){
+        this.bankInfo = bankInfo;
+    }
+    /**
+     *
+     * @param frage als String übernimt problem
+     * Wenn problem diese klasse lösen kann dann gibt sie ergebnis
+     * wenn nicht gibt sie an weitere klasse an
+     */
+    @Override
+    public void infoFragen(String frage) {
+        if(frage.equalsIgnoreCase("Credit Card info")){
+            System.out.println("Credit carten frage geloest");
+        }
+        else{
+            System.out.println("CreditCardInfo: Frage nicht beanwortet - weiter an  LisingInfo");
+            if(bankInfo != null){
+                bankInfo.infoFragen(frage);
+            }
+        }
+
+    }
+}
+
+public class LisingInfo implements BankInfo{
+    private BankInfo bankInfo;
+    /**
+     *
+     * @param bankInfo weche klasse ist nexte
+     */
+    public void setNextInfo(BankInfo bankInfo){
+        this.bankInfo = bankInfo;
+    }
+    /**
+     *
+     * @param frage als String übernimt problem
+     * Diese klasse ist letzte sie gibt antwort
+     */
+    @Override
+    public void infoFragen(String frage) {
+        if(frage.equalsIgnoreCase("Lising Info")){
+            System.out.println("Alle fragen geklert");
+        }
+    }
+}
+```
+
+![Chain of Responsibility UML](COR.png)
 **TemplateMethod**
 
 **Observer**
