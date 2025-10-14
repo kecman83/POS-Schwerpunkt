@@ -1144,3 +1144,212 @@ public class WebAuction implements Auction {
 ```
 
 ![Observer UML](Observ.png)
+
+### Aufgabe
+
+```java
+public interface IUmrechnen{
+    double umrechnen(String variante, double betrag);
+
+    double getFaktor();
+
+    boolean zustaendig(String variante);
+}
+
+
+public interface ISammelumrechnung{
+    public double sammelumrechnen(double[] betraege, String variante);
+
+}
+
+public abstract class WR implements IUmrechnen{
+
+    public double umrechnen(String variante, double betrag);
+
+}
+```
+
+    ***Chain of Responsibility, TemplateMethod und Dekorator***
+
+    _CHAIN OF RESPONSIBILITY_
+
+Erstellen Sie eine Verantwortlichkeitskette mit mindestens zwei Währungsrechnern (z.B. EUR2YEN, EURO2Dollar). Neben dem Standardverhalten einer Zuständigkeitskette soll es möglich sein, neue Währungsrechner in die Kette aufzunehmen bzw. bestehende aus der Kette zu löschen (jeweils am Ende der Kette). Die Mutterklasse der Chain ist die abstrakte WR-Klasse. Diese implementiert die Ketten-Weiterleitung in der Methode umrechnen(). Die Zuständigkeit sowie der Umrechnungsfaktor für die Umrechnung wird in den Unterklassen geklärt (Template Method).
+
+    _TEMPLATE METHOD_
+
+Implementieren Sie die Template-Methode umrechnen() in der abstrakten Klasse WR. Delegieren Sie ausschließlich die für die jeweiligen Umrechner spezifischen Methoden (zustaendig(), faktor()) zur Implementierung an die konkreten Währungsrechner-Unterklassen von WR (Hook-Methoden der Unterklassen).
+
+    _DEKORATOR_
+
+Implementieren Sie ein System von Decorators, das Währungsrechner des Typen IUmrechnen dekorieren kann. Folgende Decorators sind z.B. sinnvoll und möglich:
+
+    - Belegung eines Umrechnungsvorganges mit Gebühren (z.B. 0,5 % des Umrechnungsbetrages)
+    - Belegung eines Umrechnungsvorganges für Umrechnungen von Euro nach Währung X (nicht in die andere Richtung) mit fixen Gebühren von 5 Euro.
+
+    Hinweis: Leiten Sie dazu zunächst einen abstrakten Decorator von WR ab und implementieren Sie alle abstrakten Methoden sowie umrechnen() als transparente Weiterleitungen an den dekorierten Nächsten. Implementieren Sie dann in zwei weiteren Subklassen dieser abstraktoren Decorator-Klasse die umrechnen Methode neu, sodass die gewünschte Verhaltensänderung des Systems resultiert.
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        //neuen object eur2dol erzeugen
+        WR e2d = new Eur2Dol();
+        //zufigen von nexten
+        e2d.setWeiter(new Eur2Yen());
+        //ausgabe für umrechnen in chain of responsibility
+        System.out.println("Eur2Yen: " +e2d.umrechnen("eur2yen",100));
+        System.out.println("Eur2Dol: "+e2d.umrechnen("eur2dol",100));
+
+        System.out.println();
+        //Dekoratoren aufruf
+        WR mitProzent= new ProzentDekorator(e2d, 0.05);
+        WR mitFix = new FixDekorator( mitProzent,"Eur2Dol", 5.0);
+        System.out.println(mitFix.umrechnen("eur2dol",100));
+
+        WR e2y = new Eur2Yen();
+        WR mitProzent2= new ProzentDekorator(e2y, 0.05);
+        WR mitFix2 = new FixDekorator( mitProzent2,"Eur2Yen", 5.0);
+        System.out.println(mitFix2.umrechnen("eur2yen",100));
+    }
+}
+
+public interface IUmrechnen {
+    double umrechnen(String variante, double betrag);
+    double getFaktor();
+    boolean zustaendig(String variante);
+}
+
+public abstract class WR implements IUmrechnen{
+    private WR weiter;
+
+    public abstract double umrechnen(String variante, double betrag);
+    public WR getWeiter(){
+        return this.weiter;
+    }
+    public void setWeiter(WR weiter){
+        this.weiter = weiter;
+    }
+}
+
+public class Eur2Yen extends WR{
+    private double faktor = 176.13;
+    //rechnet wenn variante entspricht euro in yen
+    public double umrechnen(String variante, double betrag){
+        if(zustaendig(variante)){
+             return  betrag * getFaktor();
+        }
+        else{
+            // ermöglicht erweiterung
+            if(this.getWeiter() !=null){
+                return this.getWeiter().umrechnen(variante, betrag);
+            }
+            else{
+                throw new NullPointerException("Eur2Yen");
+            }
+        }
+    }
+    //gib faktor retur
+    public double getFaktor(){
+        return faktor;
+    }
+    //kann neuen facror setzen
+    public void setFaktor(double faktor){
+        this.faktor = faktor;
+    }
+     // gir zurück true oder false abhängig von variante
+    public boolean zustaendig(String variante){
+        return(variante.equalsIgnoreCase("Eur2Yen"));
+    }
+}
+
+public class Eur2Dol extends WR{
+    private double faktor = 1.16;
+    //rechnet wenn variante entspricht euro in dolar
+    public double umrechnen(String variante, double betrag){
+        if(zustaendig(variante)){
+            return  betrag * getFaktor();
+        }
+        else{
+            // ermöglicht erweiterung
+            if(this.getWeiter() !=null){
+                return this.getWeiter().umrechnen(variante, betrag);
+            }
+            else{
+                throw new NullPointerException("Eur2Dol");
+            }
+        }
+    }
+    //gib faktor retur
+    public double getFaktor(){
+        return faktor;
+    }
+    //kann neuen facror setzen
+    public void setFaktor(double faktor){
+        this.faktor = faktor;
+    }
+    // gir zurück true oder false abhängig von variante
+    public boolean zustaendig(String variante){
+        return (variante.equalsIgnoreCase("Eur2Dol"));
+    }
+}
+
+public class WRDecorator extends WR{
+    private WR wrapee;
+    public WRDecorator(WR wrapee){
+        this.wrapee = wrapee;
+    }
+    //dekorator wrapee
+    @Override
+    public double umrechnen(String variante, double betrag) {
+        return wrapee.umrechnen(variante, betrag);
+    }
+
+    @Override
+    public double getFaktor() {
+        return wrapee.getFaktor();
+    }
+    @Override
+    public boolean zustaendig(String variante) {
+        return wrapee.zustaendig(variante);
+    }
+}
+
+public class ProzentDekorator extends WRDecorator {
+    private double prozent;
+    public ProzentDekorator(WR wrapee, double prozent) {
+        super(wrapee);
+        this.prozent = prozent;
+    }
+    //umrechnen methode die erweitert dekorator und nutzt prozente
+    @Override
+    public double umrechnen(String variante, double betrag) {
+        double umgerechnet =  super.umrechnen(variante, betrag);
+        double prozes = prozent*umgerechnet;
+        double gesamt = prozes+umgerechnet;
+        System.out.println("Umgerechtet: "+umgerechnet+", gebuer:"+prozent+", ist gesamt:"+gesamt);
+        return gesamt;
+    }
+}
+
+public class FixDekorator extends WRDecorator{
+    private double gebuer;
+    private String variante;
+
+    public FixDekorator(WR wrapee, String variante,double gebuer){
+        super(wrapee);
+        this.variante = variante;
+        this.gebuer=gebuer;
+    }
+    //umrechnen methode die erweitert dekorator und nutzt gebür
+    public double umrechnen(String variante, double betrag) {
+        double umgerechnet =  super.umrechnen(variante, betrag);
+        if (variante.equalsIgnoreCase(this.variante)){
+            double gesamt = gebuer+umgerechnet;
+            System.out.println("Umgerechtet: "+umgerechnet+", gebuer:"+gebuer+", ist gesamt:"+gesamt);
+            return gesamt;
+        }
+        return umgerechnet;
+    }
+}
+```
+
+![](Sve.png)
