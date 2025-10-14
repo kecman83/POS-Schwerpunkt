@@ -1143,4 +1143,4 @@ public class WebAuction implements Auction {
 }
 ```
 
-![Observer UML]()
+![Observer UML](Observ.png)
