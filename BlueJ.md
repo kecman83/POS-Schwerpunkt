@@ -1353,3 +1353,435 @@ public class FixDekorator extends WRDecorator{
 ```
 
 ![](Sve.png)
+
+    _BUILDER_
+
+Implementieren Sie das Builder-Pattern (https://dzone.com/articles/design-patterns-the-builder-pattern) für einen konkreten Währungsrechner nach Wahl. Der Builder soll es ermöglichen, den Umrechnungsfaktor eines Währungsrechners sowie das nächste Kettenglied in der Chain of Responsitility zu setzen.
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        ChangeMoney e2d = new Euro2Dollar();
+        Boerse tausche = new Boerse(e2d);
+
+        tausche.setWechsel();
+        WR wr = tausche.getChange();
+        System.out.println(wr);
+    }
+}
+public interface IUmrechnen {
+    double umrechnen(String variante, double betrag);
+    double getFaktor();
+    boolean zustaendig(String variante);
+}
+public class WR implements IUmrechnen {
+    private String waluteYouHave;
+    private double amount;
+    private String waluteYouWant;
+    private double factor = 1.16;
+    private double gebuer;
+
+    public void setWaluteYouHave(String waluteYouHave) {
+        this.waluteYouHave = waluteYouHave;
+    }
+    public void setAmount(double amount) {
+        this.amount = amount;
+    }
+    public void setWaluteYouWant(String waluteYouWant) {
+        this.waluteYouWant = waluteYouWant;
+    }
+    public void setGebuer(double gebuer) {
+        this.gebuer = gebuer;
+    }
+
+    @Override
+    public double getFaktor() {
+        return this.factor;
+    }
+
+    @Override
+    public boolean zustaendig(String variante) {
+        return variante != null && variante.equalsIgnoreCase(waluteYouHave);
+    }
+
+    @Override
+    public double umrechnen(String variante, double betrag) {
+        if (!zustaendig(variante)) return 0;
+        double betragNachGebuehr = betrag - gebuer;
+        return betragNachGebuehr * factor;
+    }
+
+    @Override
+    public String toString() {
+        double converted = umrechnen(waluteYouHave, amount);
+        return "Sie möchten: " + this.amount + " " + this.waluteYouHave +
+                " in " + this.waluteYouWant + " umtauschen. " +
+                "Nach Gebühren und Wechselkurs erhalten Sie: " + converted + " " + waluteYouWant;
+    }
+}
+public interface ChangeMoney {
+    void sayWaluteYouHave();
+    void sayWaluteYouWant();
+    void sayAmountYouHave();
+    void sayGebuer();
+    WR getChange();
+}
+public class Euro2Dollar implements ChangeMoney {
+    private WR change;
+
+    public Euro2Dollar() {
+        this.change = new WR();
+    }
+
+    @Override
+    public void sayWaluteYouHave() {
+        change.setWaluteYouHave("Euro");
+    }
+
+    @Override
+    public void sayWaluteYouWant() {
+        change.setWaluteYouWant("Dollar");
+    }
+
+    @Override
+    public void sayAmountYouHave() {
+        change.setAmount(100);
+    }
+
+    @Override
+    public void sayGebuer() {
+        change.setGebuer(5);
+    }
+
+    @Override
+    public WR getChange() {
+        return this.change;
+    }
+}
+public class Boerse {
+        private ChangeMoney wechsel;
+
+        public Boerse(ChangeMoney wechsel) {
+            this.wechsel = wechsel;
+        }
+
+        public void setWechsel() {
+            wechsel.sayWaluteYouHave();
+            wechsel.sayAmountYouHave();
+            wechsel.sayWaluteYouWant();
+            wechsel.sayGebuer();
+        }
+
+        public WR getChange() {
+            return wechsel.getChange();
+        }
+}
+```
+
+![](build.png)
+
+    Programm simuliert eine Währungsumrechnung:
+        - Es soll z. B. 100 Euro in Dollar umrechnen.
+        - Dafür gibt es Klassen, die festlegen:
+            - welche Währung du hast
+            - welche du willst
+            - wie hoch der Betrag ist
+            - wie hoch die Gebühr ist
+            - und mit welchem Faktor umgerechnet wird
+
+    Ablauf
+        - in Main wird ein Objekt von Euro2Dollar erstellt.
+        - Dieses Objekt wird an die Klasse Boerse übergeben.
+        - Boerse ruft Methoden auf, um alle Infos zu setzen (Währung, Betrag, Gebühr).
+        - Danach bekommt ein WR-Objekt zurück.
+        - WR berechnet den endgültigen Betrag nach Gebühren und Wechselkurs.
+        - Das Ergebnis wird mit System.out.println() ausgegeben.
+
+    _ADAPTER_
+
+Externe Anwendungen benötigen eine Implementierung der Schnittstelle ISammelumrechnung (siehe oben), um Sammelumrechnungen durchführen zu können. Stellen Sie einen Adapter bereit, der Sammelumrechnungen in der geforderten Form (siehe Methodensignatur) zur Verfügung stellt und dazu die Funktionalität eines IUmrechnen (kann dekoriert sein, kann ein konkreter Währungsrechner sein, kann eine Kette sein) verwendet.
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        //Zeigt, wie man Euro2Dollar über den Adapter wie ein Sammelumrechner nutzen kann.
+        IUmrechnen euro2Dollar = new Euro2Dollar();
+        ISammelumrechnung adapter = new UmrechnenAdapter(euro2Dollar);
+
+        double[] betraege = {100, 50, 25};
+        double summe = adapter.sammelumrechnen(betraege, "Euro");
+
+        System.out.println("Gesamtsumme in Dollar: " + summe);
+    }
+}
+
+public interface IUmrechnen {
+    double umrechnen(String variante, double betrag);
+    double getFaktor();
+    boolean zustaendig(String variante);
+}
+
+public interface ISammelumrechnung {
+    public double sammelumrechnen(double[] betraege, String variante);
+}
+
+public class Euro2Dollar implements IUmrechnen {
+
+    private double faktor = 1.16;
+
+    @Override
+    public double umrechnen(String variante, double betrag) {
+        if (!zustaendig(variante)) return 0;
+        return betrag * faktor;
+    }
+
+    @Override
+    public double getFaktor() {
+        return faktor;
+    }
+
+    @Override
+    public boolean zustaendig(String variante) {
+        return "Euro".equalsIgnoreCase(variante);
+    }
+}
+
+// Adapter zwischen IUmrechnen und ISammelumrechnung
+//Macht aus Einzelumrechner → Sammelumrechner.
+//Kernstück des Adapter Patterns.
+public class UmrechnenAdapter implements ISammelumrechnung {
+
+    private IUmrechnen adaptee; // das anzupassende Objekt
+
+    public UmrechnenAdapter(IUmrechnen adaptee) {
+        this.adaptee = adaptee;
+    }
+
+    @Override
+    public double sammelumrechnen(double[] betraege, String variante) {
+        double sum = 0;
+        for (double b : betraege) {
+            sum += adaptee.umrechnen(variante, b);
+        }
+        return sum;
+    }
+}
+```
+
+![](ob.png)
+
+    _OBSERVER-
+
+An einem Währungsrechner sollen sich mehrere Observer registrieren können, die bei einer Umrechnung benachrichtig werden sollen. Jedes Mal, wenn eine Umrechnung stattfindet, sollen alle Observer benachrichtigt werden. Alle Informationen der Umrechnungen (Ausgangsbetrag, Ausgangswährung, Zielwährung, Zielbetrag) sollen mit der Benachrichtigung versendet werden. Beispielhaft sollen zwei Observer implementiert werden:
+
+    - Atom-Feed-Observer: Erzeugt einen Atom-Feed mit allen Umrechnungsinformationen und Zeitstempel (verwende dazu https://mvnrepository.com/artifact/rome/rome )
+    - Log-Observer: Erzeugt eine Log-Text-Datei mit allen Umrechnungsinformationen und Zeitstempel.
+
+Hinweis: Das Observable-Interface soll in der abstrakten WR-Klasse implementiert werden.
+
+```java
+/*
+Erstellt einen konkreten Währungsrechner (WR_EuroUmrechner)
+Registriert zwei Observer:
+    LogObserver: schreibt Umrechnungen in eine Textdatei
+    AtomFeedObserver: erzeugt einen Atom-Feed als XML-Datei
+Führt zwei Umrechnungen durch (EUR2USD mit 100 und 250)
+*/
+public class Main {
+    public static void main(String[] args) {
+        WR rechner = new WR_EuroUmrechner();
+        rechner.registriereObserver(new LogObserver("umrechnungen.log"));
+        rechner.registriereObserver(new AtomFeedObserver("umrechnungen.atom"));
+
+        System.out.println(rechner.umrechnen("EUR2USD", 100));
+        System.out.println(rechner.umrechnen("EUR2USD", 250));
+    }
+}
+
+public interface IUmrechnen {
+    double umrechnen(String variante, double betrag);
+    double getFaktor();
+    boolean zustaendig(String variante);
+}
+
+public interface IUmrechnungsObserver {
+    void aktualisiere(UmrechnungsInfo info);
+}
+
+/*
+Enthält alle relevanten Informationen zur Umrechnung:
+    Ausgangsbetrag
+    Ausgangswährung
+    Zielwährung
+    Zielbetrag
+    Zeitstempel
+*/
+import java.time.LocalDateTime;
+
+public class UmrechnungsInfo {
+    public final double ausgangsbetrag;
+    public final String ausgangswaehrung;
+    public final String zielwaehrung;
+    public final double zielbetrag;
+    public final LocalDateTime zeitpunkt;
+
+    public UmrechnungsInfo(double ausgangsbetrag, String ausgangswaehrung, String zielwaehrung, double zielbetrag) {
+        this.ausgangsbetrag = ausgangsbetrag;
+        this.ausgangswaehrung = ausgangswaehrung;
+        this.zielwaehrung = zielwaehrung;
+        this.zielbetrag = zielbetrag;
+        this.zeitpunkt = LocalDateTime.now();
+    }
+}
+
+/*
+Implementiert IUmrechnen
+Verwaltet eine Liste von Observern
+Benachrichtigt alle Observer nach jeder Umrechnung mit einem UmrechnungsInfo-Objekt
+*/
+import java.util.ArrayList;
+import java.util.List;
+
+public abstract class WR implements IUmrechnen {
+    private final List<IUmrechnungsObserver> observerListe = new ArrayList<>();
+
+    public void registriereObserver(IUmrechnungsObserver observer) {
+        observerListe.add(observer);
+    }
+
+    public void entferneObserver(IUmrechnungsObserver observer) {
+        observerListe.remove(observer);
+    }
+
+    protected void benachrichtigeObserver(UmrechnungsInfo info) {
+        for (IUmrechnungsObserver observer : observerListe) {
+            observer.aktualisiere(info);
+        }
+    }
+
+    @Override
+    public abstract double umrechnen(String variante, double betrag);
+}
+    //pom.xml
+<dependencies>
+    <dependency>
+        <groupId>com.rometools</groupId>
+        <artifactId>rome</artifactId>
+        <version>1.18.0</version>
+    </dependency>
+</dependencies>
+
+
+/*
+Rechnet von EUR nach USD mit einem festen Faktor (1.1)
+Prüft, ob die Variante "EUR2USD" unterstützt wird
+Führt die Umrechnung durch und benachrichtigt die Observer
+*/
+public class WR_EuroUmrechner extends WR {
+    private final double faktor = 1.1; // Beispiel: EUR → USD
+
+    @Override
+    public double umrechnen(String variante, double betrag) {
+        if (!zustaendig(variante)) {
+            throw new IllegalArgumentException("Nicht zuständig für Variante: " + variante);
+        }
+
+        double zielbetrag = betrag * getFaktor();
+        UmrechnungsInfo info = new UmrechnungsInfo(betrag, "EUR", "USD", zielbetrag);
+        benachrichtigeObserver(info);
+        return zielbetrag;
+    }
+
+    @Override
+    public double getFaktor() {
+        return faktor;
+    }
+
+    @Override
+    public boolean zustaendig(String variante) {
+        return "EUR2USD".equalsIgnoreCase(variante);
+    }
+}
+
+/*
+Schreibt jede Umrechnung in eine Logdatei (umrechnungen.log)
+Format: [Zeit] Betrag Währung → Betrag Währung
+*/
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class LogObserver implements IUmrechnungsObserver {
+    private final String dateipfad;
+
+    public LogObserver(String dateipfad) {
+        this.dateipfad = dateipfad;
+    }
+
+    @Override
+    public void aktualisiere(UmrechnungsInfo info) {
+        try (FileWriter writer = new FileWriter(dateipfad, true)) {
+            writer.write(String.format("[%s] %.2f %s → %.2f %s%n",
+                    info.zeitpunkt, info.ausgangsbetrag, info.ausgangswaehrung,
+                    info.zielbetrag, info.zielwaehrung));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+/**
+ * Erzeugt einen Atom-Feed (umrechnungen.atom) mit Einträgen für jede Umrechnung
+ * eder Eintrag enthält Titel, Zeitstempel, Umrechnungsdaten als Text
+ * Nutzt die ROME-Bibliothek zur Erstellung des XML-Feeds
+ * */
+import com.rometools.rome.feed.atom.*;
+import com.rometools.rome.io.WireFeedOutput;
+
+import java.io.FileWriter;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Date;
+
+public class AtomFeedObserver implements IUmrechnungsObserver {
+    private final Feed feed;
+    private final String dateipfad;
+
+    public AtomFeedObserver(String dateipfad) {
+        this.dateipfad = dateipfad;
+        this.feed = new Feed();
+        feed.setFeedType("atom_1.0");
+        feed.setTitle("Währungsumrechnungen");
+        feed.setId("urn:uuid:waehrungsrechner");
+        feed.setUpdated(new Date());
+        feed.setEntries(new ArrayList<>());
+    }
+
+    @Override
+    public void aktualisiere(UmrechnungsInfo info) {
+        Entry entry = new Entry();
+        entry.setTitle("Neue Umrechnung");
+        entry.setUpdated(Date.from(info.zeitpunkt.atZone(ZoneId.systemDefault()).toInstant()));
+        entry.setId("urn:uuid:" + info.zeitpunkt.toString());
+
+        Content content = new Content();
+        content.setType("text");
+        content.setValue(String.format("%.2f %s → %.2f %s (%s)",
+                info.ausgangsbetrag, info.ausgangswaehrung,
+                info.zielbetrag, info.zielwaehrung,
+                info.zeitpunkt));
+
+        entry.setSummary(content);
+        feed.getEntries().add(entry);
+
+        try (FileWriter writer = new FileWriter(dateipfad)) {
+            WireFeedOutput output = new WireFeedOutput();
+            output.output(feed, writer);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+```
+
+![](observation.png)
