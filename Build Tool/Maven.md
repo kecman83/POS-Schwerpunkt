@@ -1,4 +1,6 @@
-## Marven in 5 minutes
+# MAVEN
+
+## AUFGABE 1: MAVEN IN 5 MINUTES
 
 Vor Marven installation habe ich erst Scoop instalier
 
@@ -78,7 +80,7 @@ tree
 
 ![tree](tree.png)
 
-    *** Build the Project ***
+#### Build the Project
 
 ```powershell
 mvn package
@@ -96,7 +98,7 @@ java -cp target/my-app-1.0-SNAPSHOT.jar com.mycompany.app.App
 
 ![test](test_jar.png)
 
-### Maven Phases
+#### Maven Phases
 
 Obwohl dies keine vollständige Liste ist, handelt es sich hier um die am häufigsten ausgeführten Standardphasen des Lebenszyklus.
 
@@ -124,10 +126,20 @@ mvn clean dependency:copy-dependencies package
 
 ![](sequence.png)
 
-### Generating the Site
+#### Generating the Site
 
 ```powershell
 mvn site
 ```
 
 In dieser Phase wird eine Site basierend auf Informationen zum POM des Projekts generiert. Sie können die generierte Dokumentation unter target/site einsehen.
+
+## AUFGABE 2: INTELLIJ UND MAVEN
+
+Maven Projekt in IntelliJ erstellen
+
+![intelliJ](intelliJ_maven_projekt.png)
+
+Wir Bekommen folder struktur und können Dipendeci erstellen
+
+![](dependensi.png)
