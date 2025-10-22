@@ -143,3 +143,164 @@ Maven Projekt in IntelliJ erstellen
 Wir Bekommen folder struktur und können Dipendeci erstellen
 
 ![](dependensi.png)
+
+Mit Maven in IntalliJ sparen wir vile code in CMD weil Maven alle für uns macht.
+
+#### Guava
+
+```maven
+<dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>23.5-jre</version> <!-- or 23.5-android for the Android flavor -->
+    </dependency>
+```
+
+_ Multimap _
+Anders als Map<K, V> erlaubt Multimap<K, V> mehrere Werte für denselben Schlüssel.
+
+```java
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+
+public class MultimapExample {
+    public static void main(String[] args) {
+        Multimap<String, String> studenten = ArrayListMultimap.create();
+
+        studenten.put("Mathe", "Alice");
+        studenten.put("Mathe", "Bob");
+        studenten.put("Informatik", "Charlie");
+
+        System.out.println(studenten);
+        // Ausgabe: {Mathe=[Alice, Bob], Informatik=[Charlie]}
+    }
+}
+//  {Informatik=[Charlie], Mathe=[Alice, Bob]}
+```
+
+- Preconditions \_
+  Nie mehr if/else für Argumentchecks schreiben.
+
+```java
+import com.google.common.base.Preconditions;
+
+public class PreconditionsExample {
+    public static void main(String[] args) {
+        int alter = 17;
+
+        Preconditions.checkArgument(alter >= 18, "Muss mindestens 18 sein!");
+        System.out.println("Willkommen!");
+    }
+}
+
+```
+
+#### Apache Commons
+
+_ Common Text _
+
+    Apache Commons Text ist eine Java-Bibliothek, die praktische Funktionen für die Arbeit mit Text bereitstellt:
+        - String-Manipulation (z. B. Abstände entfernen, wiederholen, abgleichen)
+        - Textsubstitution / Template-Verarbeitung
+        - StringEscape (z. B. HTML, Java, JSON escapen)
+        - Ähnlichkeitsvergleiche (String-Similarity)
+        - RandomStringGenerator
+    Praktisch zum Schutz gegen XSS oder beim Rendern von HTML.
+
+```maven
+    <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-text</artifactId>
+        <version>1.14.0</version>
+    </dependency>
+```
+
+Escape und Unescape
+
+```java
+import org.apache.commons.text.StringEscapeUtils;
+
+public class EscapeExample {
+public static void main(String[] args) {
+String input = "<h1>Hello</h1>";
+
+    String escaped = StringEscapeUtils.escapeHtml4(input);
+    System.out.println("Escaped: " + escaped);
+
+    String unescaped = StringEscapeUtils.unescapeHtml4(escaped);
+    System.out.println("Unescaped: " + unescaped);
+    }
+
+}
+//  Escaped: &lt;h1&gt;Hello&lt;/h1&gt;
+//  Unescaped: <h1>Hello</h1>
+```
+
+Random String Generator
+
+```java
+import org.apache.commons.text.RandomStringGenerator;
+
+public class RandomStringExample {
+    public static void main(String[] args) {
+        RandomStringGenerator generator = new RandomStringGenerator.Builder()
+                .withinRange('a', 'z')
+                .build();
+
+        String random = generator.generate(10);
+        System.out.println("Random String: " + random);
+    }
+}
+
+//  Random String: xjldhqwepo
+```
+
+    String Similarity – Ähnlichkeit zwischen zwei Strings berechnen
+
+```java
+import org.apache.commons.text.similarity.LevenshteinDistance;
+
+public class SimilarityExample {
+    public static void main(String[] args) {
+        LevenshteinDistance distance = new LevenshteinDistance();
+
+        int result = distance.apply("kitten", "sitting");
+        System.out.println("Levenshtein distance: " + result);
+    }
+}
+
+//  Levenshtein distance: 3
+
+```
+
+_ The Logging Component _
+
+```mavin
+<dependency>
+        <groupId>commons-logging</groupId>
+        <artifactId>commons-logging</artifactId>
+        <version>1.3.5</version>
+    </dependency>
+```
+
+```java
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+public class LoggingExample {
+    private static final Log log = LogFactory.getLog(LoggingExample.class);
+
+    public static void main(String[] args) {
+        log.info("Das ist eine INFO-Nachricht");
+        log.warn("Das ist eine WARNUNG");
+        log.error("Das ist eine FEHLERMELDUNG");
+
+        try {
+            int x = 10 / 0;
+        } catch (Exception e) {
+            log.fatal("Ein fataler Fehler ist aufgetreten!", e);
+        }
+    }
+}
+
+```
