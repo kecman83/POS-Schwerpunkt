@@ -150,10 +150,10 @@ Mit Maven in IntalliJ sparen wir vile code in CMD weil Maven alle für uns macht
 
 ```maven
 <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>23.5-jre</version> <!-- or 23.5-android for the Android flavor -->
-    </dependency>
+    <groupId>com.google.guava</groupId>
+    <artifactId>guava</artifactId>
+    <version>23.5-jre</version> <!-- or 23.5-android for the Android flavor -->
+</dependency>
 ```
 
 _ Multimap _
@@ -303,4 +303,59 @@ public class LoggingExample {
     }
 }
 
+```
+
+## AUFGABE 4:
+
+Maven ist das Fundament, auf dem Spring Boot organisiert, gebaut und gestartet wird.
+Es bietet Struktur, Automatisierung, Wiederholbarkeit und einfaches Dependency-Management — Dinge, die du bei modernen Java-Projekten unbedingt brauchst.
+
+- Spring Boot besteht aus vielen Modulen (Web, JPA, Security, Test, usw.).
+  Statt jede einzelne Bibliothek manuell herunterzuladen, reicht es in Maven, eine einzige Dependency zu definieren.
+- Maven lädt dann automatisch alle benötigten Bibliotheken (wie Tomcat, Jackson, Spring Core, usw.) aus dem zentralen Maven-Repository herunter und bindet sie ein.
+
+Ohne Maven müsstest du das alles selbst verwalten — extrem mühsam und fehleranfällig.
+| Phase | Beschreibung |
+| --------- | --------------------------------------------- |
+| `clean` | Alte Builds löschen |
+| `compile` | Quellcode kompilieren |
+| `test` | Tests ausführen |
+| `package` | Alles in eine `.jar` oder `.war` Datei packen |
+| `install` | Das Paket lokal verfügbar machen |
+| `deploy` | (optional) Auf Server/Repository hochladen |
+
+- Spring Boot bringt ein Maven-Plugin mit:
+
+```bash
+mvn spring-boot:run
+```
+
+Das startet die Anwendung direkt – ohne manuell java -jar ... aufzurufen oder komplizierte Serverkonfigurationen.
+
+Spring Boot nutzt selbst Maven, um passende Versionen zu verwalten.
+Das heißt: Wenn du z. B. Spring Boot 3.3.4 nutzt, dann wählt Maven automatisch kompatible Versionen aller Bibliotheken.
+
+    Maven kann mit Plugins erweitert werden – z. B.:
+    - spring-boot-maven-plugin → Startet/packt Spring Boot Apps
+    - maven-compiler-plugin → Steuert Java-Version
+    - maven-surefire-plugin → Führt Tests aus
+    - maven-deploy-plugin → Deployt auf Server
+
+Wenn ein Team an demselben Projekt arbeitet, sorgt Maven dafür, dass alle dieselben Versionen von Bibliotheken, Plugins und Tools verwenden.
+
+```java
+package com.beispiel.demo;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class HelloController {
+
+    @GetMapping("/")
+    public String hello() {
+        return "Hallo von Spring Boot mit Maven!";
+    }
+}
+// Hallo von Spring Boot mit Maven!
 ```
