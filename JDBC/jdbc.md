@@ -312,6 +312,1206 @@ select * from courses;
 
 ![](courses.png)
 
+## DAO JDBC Aufgabe 3 und 4
+
+```java
+import dataaccess.MySqlCourseRepository;
+import dataaccess.MySqlStudentsRepository;
+import dataaccess.MysqlDatabaseConnection;
+import ui.Cli;
+import dataaccess.MySqlBookingRepository;
+import service.BookingService;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+
+public class Main {
+    public static void main(String[] args) throws SQLException, ClassNotFoundException {
+
+        try{
+            MySqlCourseRepository courseRepo = new MySqlCourseRepository();
+            MySqlStudentsRepository studentRepo = new MySqlStudentsRepository();
+            MySqlBookingRepository bookingRepo = new MySqlBookingRepository();
+            BookingService bookingService = new BookingService(bookingRepo, courseRepo, studentRepo);
+            Cli myCli = new Cli(courseRepo, studentRepo, bookingService);
+            myCli.start();
+            /*Connection myConnection = MysqlDatabaseConnection.getConnection("jdbc:mysql://localhost:3306/jdbcdemo","user","12345");
+            System.out.println("Verbindung aufgebaut");*/
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+}
+
+package ui;
+import dataaccess.DatabaseException;
+import dataaccess.MySqlCourseRepository;
+import dataaccess.MySqlStudentsRepository;
+import dataaccess.MyStudentsRepository;
+import domain.Course;
+import domain.CourseType;
+import domain.InvalidValueException;
+import domain.Students;
+
+import java.util.*;
+import java.sql.Date;
+
+import static java.util.Date.*;
+
+import service.BookingService;
+import domain.BookingInfo;
+
+//MENUE
+public class Cli {
+    Scanner scan;
+    MySqlCourseRepository repo;
+    MySqlStudentsRepository srepo;
+    BookingService bookingService;
+    public Cli(MySqlCourseRepository repo,MySqlStudentsRepository srepo, BookingService bookingService){
+        this.scan = new Scanner(System.in);
+        this.repo = repo;
+        this.srepo = srepo;
+        this.bookingService = bookingService;
+    }
+    public void start(){
+        String input = "-";
+        while(!input.equals("x")){
+            showMenue();
+            input = scan.nextLine();
+            switch (input){
+                case "1":
+                    System.out.println("Kurseeingabe");
+                    addCours();
+                    break;
+                case "2":
+                    System.out.println("Alle Kurse anzeigen");
+                    showAllCourses();
+                    break;
+                case "3":
+                    System.out.println("Alle Kurse anzeigen");
+                    showCoursesDetails();
+                    break;
+                case "4":
+                    System.out.println("Update Kursdetails");
+                    updateCourseDetails();
+                    break;
+                case "5":
+                    System.out.println("Kurs Löschen");
+                    deleteCours();
+                    break;
+                case "6":
+                    System.out.println("Kurs suchen");
+                    courseSuchen();
+                    break;
+                case "7":
+                    System.out.println("Laufende Kurse suchen");
+                    runningCourse();
+                    break;
+                case "8":
+                    System.out.println("Kurs buchen");
+                    bookCourse();
+                    break;
+                    //STUDENTS
+                case "11":
+                    System.out.println("Student eingeben");
+                    addStudent();
+                    break;
+                case "12":
+                    System.out.println("Alle studenten anzeigen");
+                    showAllStudent();
+                    break;
+                case "13":
+                    System.out.println("Studentdetails anzeigen");
+                    showStudentDetails();
+                    break;
+                case "14":
+                    System.out.println("Student updaten");
+                    updateStudent();
+                    break;
+                case "15":
+                    System.out.println("Student löschen");
+                    deleteStudent();
+                    break;
+                case "22":
+                    System.out.println("Alle Bookings anzeigen");
+                    showAllBookings();
+                    break;
+                    //BOOKING
+                case "23":
+                    System.out.println("Cours buchen");
+                    bookCourse();
+                    break;
+                    //ENDE
+                case "x":
+                    System.out.println("Auf Wiedersehen");
+                    break;
+                default:
+                    inputError();
+            }
+        }
+        scan.close();
+    }
+
+    private void showAllBookings() {
+
+    }
+
+    private void deleteStudent() {
+        System.out.println("Welchen Students möchten sie Löschen");
+        Long studentIdToDelet = Long.parseLong(scan.nextLine());
+        try{
+            srepo.deleteById(studentIdToDelet);
+        } catch (DatabaseException e) {
+            System.out.println("Fehler beim Löschen des Kurses: " + e.getMessage());
+        }catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void updateStudent() {
+        System.out.println("Für welches Students-ID möchten Sie die Details ändern?");
+        Long studentsID = Long.parseLong(scan.nextLine());
+        try{
+            Optional<Students> studentsOptional = srepo.getById(studentsID);
+            if (studentsOptional.isEmpty()){
+                System.out.println("Kurs mit der ID " + studentsID + " nicht gefunden.");
+            }else{
+                Students students = studentsOptional.get();
+                System.out.println("Enderungen für Students");
+                System.out.println(students);
+                String vorname,lastname;
+                Date birthDate;
+
+                System.out.println("Bitte alle neuen Kurs daten eingeben:");
+                System.out.println("Vorname:" );
+                vorname = scan.nextLine();
+                System.out.println("Nachname:");
+                lastname = scan.nextLine();
+                System.out.println("BirthDate (yyyy-mm-dd):");
+                birthDate = Date.valueOf(scan.nextLine());
+
+                Optional<Students> optionalStudentsUpdatet = srepo.update(
+                        new Students(
+                                students.getId(),
+                                vorname.equals("") ? students.getFirstName() : vorname,
+                                lastname.equals("") ? students.getLastName() : lastname,
+                                birthDate == null ? students.getBirthDay() : birthDate
+                        )
+                );
+                if(optionalStudentsUpdatet.isPresent()){
+                    System.out.println("Kurs erfolgreich geandert: " + optionalStudentsUpdatet.get());
+                } else {
+                    System.out.println("Kurs konnte nicht geandert werden");
+                }
+            }
+        } catch (IllegalArgumentException illegalArgumentException){
+            System.out.println("Fehler bei der Eingabe: " + illegalArgumentException.getMessage());
+        }catch (InvalidValueException invalidValueException){
+            System.out.println("Ungültiger Wert: " + invalidValueException.getMessage());
+        }catch (DatabaseException databaseException){
+            System.out.println("Fehler bei der Datenbankabfrage: " + databaseException.getMessage());
+        } catch (Exception e) {
+            System.out.println("Allgemeiner Fehler: " + e.getMessage());
+        }
+    }
+
+    private void showStudentDetails() {
+        System.out.println("Für welche Student-ID möchten Sie die Details anzeigen?");
+        Long studentID = Long.parseLong(scan.nextLine());
+        try{
+            Optional<Students> student = srepo.getById(studentID);
+            if(student.isPresent()){
+                System.out.println(student.get());
+            } else {
+                System.out.println("Kein Student mit der ID " + studentID + " vorhanden");
+            }
+    }catch (DatabaseException databaseException){
+        System.out.println("Fehler bei der Datenbankabfrage: " + databaseException.getMessage());
+    } catch (Exception e) {
+        System.out.println("Allgemeiner Fehler: " + e.getMessage());
+    }}
+
+    private void showAllStudent() {
+        List<Students> list = null;
+        try{
+            list = srepo.getAll();
+            if(list.size()>0){
+                for(Students s : list){
+                    System.out.println(s);
+                }
+            } else {
+                System.out.println("Keine Studente vorhanden");
+            }
+        } catch (DatabaseException databaseException) {
+            System.out.println("Fehler bei der Datenbankabfrage: " + databaseException.getMessage());
+        } catch (Exception e) {
+            System.out.println("Allgemeiner Fehler: " + e.getMessage());
+        }
+    }
+
+    private void addStudent() {
+        String vorname, nachname;
+        Date geburtsdatum;
+        try {
+            System.out.println("Bitte alle Studenten daten eingeben:");
+            System.out.println("Vorname:");
+            vorname = scan.nextLine();
+            if (vorname.equals("")) {
+                throw new IllegalArgumentException("Vorname darf nicht leer sein");
+            }
+            System.out.println("Nachname:");
+            nachname = scan.nextLine();
+            if (nachname.equals("")) {
+                throw new IllegalArgumentException("Nachname darf nicht leer sein");
+            }
+            System.out.println("Geburtsdatum (yyyy-mm-dd):");
+            geburtsdatum = Date.valueOf(scan.nextLine());
+            Optional<Students> optionalStudents = srepo.insert(new Students(vorname, nachname, geburtsdatum));
+            if (optionalStudents.isPresent()) {
+                System.out.println("Student erfolgreich angelegt: " + optionalStudents.get());
+            } else {
+                System.out.println("Student konnte nicht angelegt werden");
+            }
+        } catch (IllegalArgumentException illegalArgumentException) {
+            System.out.println("Fehler bei der Eingabe: " + illegalArgumentException.getMessage());
+        } catch (InvalidValueException invalidValueException) {
+            System.out.println("Ungültiger Wert: " + invalidValueException.getMessage());
+        } catch (DatabaseException databaseException) {
+            System.out.println("Fehler bei der Datenbankabfrage: " + databaseException.getMessage());
+        } catch (Exception e) {
+            System.out.println("Allgemeiner Fehler: " + e.getMessage());
+        }
+    }
+
+    private void runningCourse() {
+        System.out.println("Laufende Kurse:");
+        List<Course> lista= new ArrayList<>();
+        try{
+            lista = repo.findAllRunningCourses();
+            for(Course course : lista){
+                System.out.println(course);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void courseSuchen() {
+        System.out.println("Suchtext eingeben (Name oder Beschreibung):");
+        String search = scan.nextLine();
+        List<Course> lista;
+        try{
+            lista = repo.findAllCourserByNameOrDescription(search);
+            for(Course course : lista){
+                System.out.println(course);
+            }
+        }catch (DatabaseException e){
+            System.out.println("Fehler bei der Suche: " + e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void deleteCours() {
+        System.out.println("Welchen Kurs möchten sie Löschen");
+        Long coursIdToDelet = Long.parseLong(scan.nextLine());
+
+        try{
+            repo.deleteById(coursIdToDelet);
+        } catch (DatabaseException e) {
+            System.out.println("Fehler beim Löschen des Kurses: " + e.getMessage());
+        }catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void updateCourseDetails() {
+        System.out.println("Für welches Kurs-ID möchten Sie die Details ändern?");
+        Long courseID = Long.parseLong(scan.nextLine());
+        try{
+            Optional<Course> courseOptional = repo.getById(courseID);
+            if (courseOptional.isEmpty()){
+                System.out.println("Kurs mit der ID " + courseID + " nicht gefunden.");
+            }else{
+                Course course = courseOptional.get();
+                System.out.println("Enderungen für Kurs");
+                System.out.println(course);
+                String name,description;
+                int hours;
+                Date beginDate,endDate;
+                CourseType courseType;
+
+                System.out.println("Bitte alle neuen Kurs daten eingeben:");
+                System.out.println("Name:" );
+                name = scan.nextLine();
+                System.out.println("Description:");
+                description = scan.nextLine();
+                System.out.println("Hours:");
+                hours = Integer.parseInt(scan.nextLine());
+                System.out.println("BeginDate (yyyy-mm-dd):");
+                beginDate = Date.valueOf(scan.nextLine());
+                System.out.println("EndDate (yyyy-mm-dd):");
+                endDate = Date.valueOf(scan.nextLine());
+                System.out.println("CourseType (ZA/BF/FF/DE):");
+                courseType = CourseType.valueOf(scan.nextLine());
+
+                Optional<Course> optionalCourseUpdatet = repo.update(
+                        new Course(
+                                course.getId(),
+                                name.equals("") ? course.getName() : name,
+                                description.equals("") ? course.getDescription() : description,
+                                hours == 0 ? course.getHours() : Integer.parseInt(String.valueOf(hours)),
+                                beginDate == null ? course.getBeginDate() : beginDate,
+                                endDate == null ? course.getEndDate() : endDate,
+                                courseType == null ? (CourseType) course.getCourseType() : courseType
+                        )
+                );
+                if(optionalCourseUpdatet.isPresent()){
+                    System.out.println("Kurs erfolgreich geandert: " + optionalCourseUpdatet.get());
+                } else {
+                    System.out.println("Kurs konnte nicht geandert werden");
+                }
+            }
+        } catch (IllegalArgumentException illegalArgumentException){
+            System.out.println("Fehler bei der Eingabe: " + illegalArgumentException.getMessage());
+        }catch (InvalidValueException invalidValueException){
+            System.out.println("Ungültiger Wert: " + invalidValueException.getMessage());
+        }catch (DatabaseException databaseException){
+            System.out.println("Fehler bei der Datenbankabfrage: " + databaseException.getMessage());
+        } catch (Exception e) {
+            System.out.println("Allgemeiner Fehler: " + e.getMessage());
+        }
+    }
+
+    private void addCours() {
+        String name,description;
+        int hours;
+        Date beginDate,endDate;
+        CourseType courseType;
+        try{
+            System.out.println("Bitte alle Kurs daten eingeben:");
+            System.out.println("Name:");
+            name = scan.nextLine();
+            if(name.equals("")){
+                throw new IllegalArgumentException("Name darf nicht leer sein");
+            }
+            System.out.println("Description:");
+            description = scan.nextLine();
+            if(description.equals("")){
+                throw new IllegalArgumentException("Description darf nicht leer sein");
+            }
+            System.out.println("Hours:");
+            hours = Integer.parseInt(scan.nextLine());
+            System.out.println("BeginDate (yyyy-mm-dd):");
+            beginDate = Date.valueOf(scan.nextLine());
+            System.out.println("EndDate (yyyy-mm-dd):");
+            endDate = Date.valueOf(scan.nextLine());
+            System.out.println("CourseType (ZA/BF/FF/DE):");
+            courseType = CourseType.valueOf(scan.nextLine());
+            Optional<Course> optionalCourse = repo.insert(new Course(name,description,hours,beginDate,endDate,courseType));
+
+            if(optionalCourse.isPresent()){
+                System.out.println("Kurs erfolgreich angelegt: " + optionalCourse.get());
+            } else {
+                System.out.println("Kurs konnte nicht angelegt werden");
+            }
+
+        }catch (IllegalArgumentException illegalArgumentException){
+            System.out.println("Fehler bei der Eingabe: " + illegalArgumentException.getMessage());
+        }catch (InvalidValueException invalidValueException){
+            System.out.println("Ungültiger Wert: " + invalidValueException.getMessage());
+        }catch (DatabaseException databaseException){
+            System.out.println("Fehler bei der Datenbankabfrage: " + databaseException.getMessage());
+        } catch (Exception e) {
+            System.out.println("Allgemeiner Fehler: " + e.getMessage());
+        }
+    }
+
+    private void showCoursesDetails() {
+        System.out.println("Für welche Kurs-ID möchten Sie die Details anzeigen?");
+        Long courseID = Long.parseLong(scan.nextLine());
+        try{
+            Optional<Course> course = repo.getById(courseID);
+            if(course.isPresent()){
+                System.out.println(course.get());
+            } else {
+                System.out.println("Kein Kurs mit der ID " + courseID + " vorhanden");
+            }
+        }catch (DatabaseException databaseException){
+            System.out.println("Fehler bei der Datenbankabfrage: " + databaseException.getMessage());
+        } catch (Exception e) {
+            System.out.println("Allgemeiner Fehler: " + e.getMessage());
+        }
+    }
+
+    private void showAllCourses() {
+        List<Course> list = null;
+        try{
+            list = repo.getAll();
+            if(list.size()>0){
+                for(Course c : list){
+                    System.out.println(c);
+                }
+            } else {
+                System.out.println("Keine Kurse vorhanden");
+            }
+        } catch (DatabaseException databaseException) {
+            System.out.println("Fehler bei der Datenbankabfrage: " + databaseException.getMessage());
+        } catch (Exception e) {
+            System.out.println("Allgemeiner Fehler: " + e.getMessage());
+        }
+    }
+
+    private void bookCourse(){
+        try{
+            System.out.println("Student-ID:");
+            Long studentId = Long.parseLong(scan.nextLine());
+            System.out.println("Course-ID:");
+            Long courseId = Long.parseLong(scan.nextLine());
+
+            BookingInfo info = bookingService.createBooking(studentId, courseId);
+            System.out.println("Buchung erfolgreich: " + info);
+        } catch (IllegalArgumentException ia){
+            System.out.println("Fehler bei der Eingabe: " + ia.getMessage());
+        } catch (InvalidValueException ive){
+            System.out.println("Ungültiger Wert: " + ive.getMessage());
+        } catch (DatabaseException de){
+            System.out.println("Datenbankfehler: " + de.getMessage());
+        } catch (Exception e){
+            System.out.println("Allgemeiner Fehler: " + e.getMessage());
+        }
+    }
+
+    private void showMenue(){
+        System.out.println("------------------------KURSMANAGEMENT--------------------------");
+        System.out.println("(1) Kurs eingeben \t (2) Alle Kurse anzeigen \t"+"(3) Kursdetails anzeigen");
+        System.out.println("(4) Kursdetails endern \t (5) Kurs Löschen \t (6) Course suchen");
+        System.out.println("(7) Kurse die Laufen \t (8) Kurs buchen \t (-) XXXX");
+        System.out.println("-----------------------------STUDENT-----------------------------");
+        System.out.println("(11) Student eingeben \t (12) Alle Studente anzeigen \t"+"(13) Studentdetails anzeigen");
+        System.out.println("(14) Studentdetails endern \t (15) Student Löschen \t (16) XXXX");
+        System.out.println("(17) XXXXXXXXX \t (-) XXXX \t (-) XXXX");
+        System.out.println("----------------------------BOOKING-----------------------------");
+        System.out.println("(21) XXXXX \t (22) XXXX \t"+"(23) Kurs Buchen");
+        System.out.println("(24) XXXX \t (25) xxxx \t (26) XXXX");
+        System.out.println("(27) XXXXXXXXX \t (-) XXXX \t (-) XXXX");
+        System.out.println("(x) ENDE");
+    }
+    private void inputError(){
+        System.out.println("Bitte nur die Zahlen der Menüaswahl eingeben");
+    }
+}
+
+package util;
+
+public class Assert {
+    public static void notNull(Object obj) {
+        if (obj == null) {
+            throw new IllegalArgumentException("Greska");
+        }
+    }
+}
+
+package domain;
+
+import java.sql.Date;
+
+public class Students extends BaseEntity{
+    private String firstName, lastName;
+    private Date dateOfBirth;
+
+    public Students(Long id,String firstName, String lastName, Date dateOfBirth) {
+        super(id);
+        this.setFirstName(firstName);
+        this.setLastName(lastName);
+        this.setDateOfBirth(dateOfBirth);
+    }
+    public Students(String firstName, String lastName, Date dateOfBirth) {
+        super(null);
+        this.setFirstName(firstName);
+        this.setLastName(lastName);
+        this.setDateOfBirth(dateOfBirth);
+    }
+    public String getFirstName() {
+        return firstName;
+    }
+    public void setFirstName(String firstName) throws IllegalArgumentException {
+        if(firstName != null || !firstName.equals("")) {
+            this.firstName = firstName;
+        }else{
+            throw new IllegalArgumentException("firstName is null");
+        }
+    }
+    public String getLastName() {
+        return lastName;
+    }
+    public void setLastName(String lastName) throws IllegalArgumentException {
+        if (lastName != null || !lastName.equals("")) {
+            this.lastName = lastName;
+        } else {
+            throw new IllegalArgumentException("lastName is null");
+        }
+    }
+    public Date getBirthDay() {
+        return dateOfBirth;
+    }
+    public void setDateOfBirth(Date dateOfBirth) throws IllegalArgumentException {
+        if(dateOfBirth != null) {
+            this.dateOfBirth = dateOfBirth;
+        }else {
+            throw new IllegalArgumentException("dateOfBirth is null");
+        }
+    }
+    public String toString() {
+        return "Students{" +
+                "firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", dateOfBirth=" + dateOfBirth +
+                "} " + super.toString();
+    }
+}
+package domain;
+
+public class InvalidValueException extends RuntimeException {
+    public InvalidValueException(String message) {
+        super(message);
+    }
+}
+package domain;
+
+public enum CourseType {
+    OE, BF, ZA, FF
+}
+package domain;
+
+import java.sql.Date;
+//OBJECT zum speicher daten aus DB oder von Object ins DB
+public class Course extends BaseEntity {
+    private String name, description;
+    private int hours;
+    private Date beginDate, endDate;
+    private CourseType coursType;
+
+    public Course(Long id, String name, String description, int hours, Date beginDate, Date endDate, CourseType coursType) throws InvalidValueException {
+        super(id);
+        this.setName(name);
+        this.setDescription(description);
+        this.setHours(hours);
+        this.setBeginDate(beginDate);
+        this.setEndDate(endDate);
+        this.setCourseType(coursType);
+    }
+    public Course(String name, String description, int hours, Date beginDate, Date endDate, CourseType coursType) throws InvalidValueException {
+        super(null);
+        this.setName(name);
+        this.setDescription(description);
+        this.setHours(hours);
+        this.setBeginDate(beginDate);
+        this.setEndDate(endDate);
+        this.setCourseType(coursType);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) throws InvalidValueException {
+        if(name!=null && !name.isEmpty()){
+            this.name = name;
+        }else{
+            throw new InvalidValueException("Name muss min 2 zeichen lang sein");
+        }
+
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) throws InvalidValueException {
+        if(description!=null && !description.isEmpty()){
+            this.description = description;
+        }else {
+            throw new InvalidValueException("Description muss min 2 zeichen lang sein");
+        }
+
+    }
+
+    public int getHours() {
+        return hours;
+    }
+
+    public void setHours(int hours) throws InvalidValueException {
+        if(hours>0 || hours<10){
+            this.hours = hours;
+        }else{
+            throw new  InvalidValueException("Hours muss min 1 zeichen lang");
+        }
+    }
+
+    public Date getBeginDate() {
+        return beginDate;
+    }
+
+    public void setBeginDate(Date beginDate) throws InvalidValueException {
+        if(beginDate!=null) {
+            if (this.endDate != null) {
+                if (beginDate.before(this.endDate)) {
+                    this.beginDate = beginDate;
+                } else {
+                    throw new InvalidValueException("Begin date muss vor end date sein");
+                }
+            } else{
+                this.beginDate = beginDate;
+            }
+        }else {
+            throw new InvalidValueException("Startdatum darf nicht null / leer sein");
+        }
+    }
+
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) throws InvalidValueException {
+        if(endDate!=null) {
+            if (this.beginDate != null) {
+                if (endDate.after(this.beginDate)) {
+                    this.endDate = endDate;
+                } else {
+                    throw new InvalidValueException("End date muss nach Begindate sein");
+                }
+            } else{
+                this.endDate = endDate;
+            }
+        }else {
+            throw new InvalidValueException("Enddatum darf nicht null / leer sein");
+        }
+    }
+
+    public CourseType getCoursType() {
+        return coursType;
+    }
+
+    public void setCourseType(CourseType coursType)throws InvalidValueException {
+        if(coursType!=null){
+            this.coursType = coursType;
+        }
+        else{
+            throw new InvalidValueException("Cours Type darf nicht null sein");
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Course{" +
+                "id=" +this.getId() +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", hours=" + hours +
+                ", beginDate=" + beginDate +
+                ", endDate=" + endDate +
+                ", coursType=" + coursType +
+                '}';
+    }
+
+    public Object getCourseType() {
+        return coursType;
+    }
+}
+package domain;
+
+//separat ID weil es offt vorkommt
+public abstract class BaseEntity {
+    private Long id;
+
+    public BaseEntity(Long id) {
+        setId(id);
+    }
+
+    public void setId(Long id) {
+        if(id==null || id >= 0){
+            this.id = id;
+        }else{
+            throw new InvalidValueException("Kurs-ID muss größer gleich 0 sein");
+        }
+    }
+    public Long getId() {
+        return this.id;
+    }
+
+    @Override
+    public String toString() {
+        return "BaseEntity{" +
+                "id=" + id +
+                '}';
+    }
+}
+package dataaccess;
+
+import domain.Students;
+
+import java.sql.Date;
+import java.util.List;
+
+public interface MyStudentsRepository extends BaseRepository<Students, Long> {
+    List<Students> findAllStudentsByFirstName(String name);
+    List<Students> findAllStudentsByLastName(String name);
+    List<Students> findAllStudentsByBirthDay(Date birthDay);
+}
+package dataaccess;
+
+import domain.Students;
+import util.Assert;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+public class MySqlStudentsRepository implements MyStudentsRepository{
+
+    Connection conn;
+
+    public MySqlStudentsRepository()throws ClassNotFoundException, SQLException {
+        this.conn = MysqlDatabaseConnection.getConnection("jdbc:mysql://localhost:3306/jdbcdemo","user","12345");
+    }
+
+    @Override
+    public List<Students> findAllStudentsByFirstName(String name) {
+        return List.of();
+    }
+
+    @Override
+    public List<Students> findAllStudentsByLastName(String name) {
+        return List.of();
+    }
+
+    @Override
+    public List<Students> findAllStudentsByBirthDay(Date birthDay) {
+        return List.of();
+    }
+
+    @Override
+    public Optional<Students> insert(Students entity) {
+        Assert.notNull(entity);
+        try{
+            String insertSql = "insert into students (firstname, lastname, birthday) values (?,?,?)";
+            PreparedStatement preparedStatement = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS);
+            preparedStatement.setString(1, entity.getFirstName());
+            preparedStatement.setString(2, entity.getLastName());
+            preparedStatement.setDate(3, entity.getBirthDay());
+
+            int affectedRows = preparedStatement.executeUpdate();
+            if(affectedRows == 0){
+                return Optional.empty();
+            }
+            ResultSet generatedKey = preparedStatement.getGeneratedKeys();
+            if (generatedKey.next()) {
+                return this.getById(generatedKey.getLong(1));
+            }else{
+                return Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Optional<Students> getById(Long id) throws SQLException {
+        Assert.notNull(id);
+        if (countStudentsInDbWithId(id) == 0) {
+            return Optional.empty();
+        } else {
+            try{
+                String selectSql = "select * from students where id = ?";
+                PreparedStatement preparedStatement = conn.prepareStatement(selectSql);
+                preparedStatement.setLong(1, id);
+                ResultSet rs = preparedStatement.executeQuery();
+                rs.next();
+                Students student = new Students(
+                        rs.getLong("id"),
+                        rs.getString("firstname"),
+                        rs.getString("lastname"),
+                        rs.getDate("birthday")
+                );
+                return Optional.of(student);
+            }catch (SQLException e){
+            throw new DatabaseException("Fehler bei der Abfrage des Kurses mit der ID: " + id);
+            }
+        }
+    }
+    private int countStudentsInDbWithId(Long id) throws SQLException {
+        try{
+            String countSql = "select count(*) as count from students where id=?";
+            PreparedStatement preparedStatement = conn.prepareStatement(countSql);
+            preparedStatement.setLong(1, id);
+            ResultSet rs = preparedStatement.executeQuery();
+            rs.next();
+            int studentsCount = rs.getInt("count");
+            return studentsCount;
+
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public List<Students> getAll() {
+        String sql = "select * from students";
+        try {
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            ResultSet rs = preparedStatement.executeQuery();
+            ArrayList<Students> studentList = new ArrayList<>();
+            while (rs.next()) {
+                studentList.add(new Students(
+                        rs.getLong("id"),
+                        rs.getString("firstname"),
+                        rs.getString("lastname"),
+                        rs.getDate("birthday")
+                ));
+            }
+            return  studentList;
+        } catch (SQLException e) {
+            throw new DatabaseException("Fehler bei der Abfrage der Kurse");
+        }
+    }
+
+    @Override
+    public Optional<Students> update(Students entity) throws SQLException {
+        Assert.notNull(entity);
+        String sql = "update students set firstname = ?, lastname = ?, birthday where id = ?";
+        if(countStudentsInDbWithId(entity.getId()) == 0) {
+            return Optional.empty();} else {
+            try {
+                PreparedStatement preparedStatement = conn.prepareStatement(sql);
+                preparedStatement.setString(1, entity.getFirstName());
+                preparedStatement.setString(2, entity.getLastName());
+                preparedStatement.setDate(3, entity.getBirthDay());
+                preparedStatement.setLong(4, entity.getId());
+
+
+                int affectedRows = preparedStatement.executeUpdate();
+
+                if(affectedRows == 0){
+                    return Optional.empty();
+                }else {
+                    return this.getById(entity.getId());
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        Assert.notNull(id);
+        String sql = "delete from students where id = ?";
+        try{
+            if(countStudentsInDbWithId(id) == 1) {
+                PreparedStatement preparedStatement = conn.prepareStatement(sql);
+                preparedStatement.setLong(1, id);
+                preparedStatement.executeUpdate();
+            }
+        }catch (SQLException e){
+            throw new DatabaseException("Fehler beim Löschen des Kurses mit der ID: " + id);
+        }
+    }
+}
+package dataaccess;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+//VERBINDUN ZU DB
+public class MysqlDatabaseConnection {
+    private static Connection con = null;
+
+    private MysqlDatabaseConnection() {
+
+    }
+    public static Connection getConnection(String url, String user, String pwd) throws SQLException, ClassNotFoundException {
+        if(con != null) {
+            return con;
+        }else{
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            con = DriverManager.getConnection(url, user, pwd);
+            return con;
+        }
+    }
+}
+package dataaccess;
+
+import domain.Course;
+import domain.CourseType;
+import util.Assert;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+public class MySqlCourseRepository implements MyCourseRepository{
+    private Connection conn;
+
+    public MySqlCourseRepository()throws SQLException,ClassNotFoundException {
+        this.conn = MysqlDatabaseConnection.getConnection("jdbc:mysql://localhost:3306/jdbcdemo","user","12345");
+    }
+    @Override
+    public List<Course> findAllCoutsesByName(String name) {
+        return List.of();
+    }
+
+    @Override
+    public List<Course> findAllCoutsesByDescription(String description) {
+        return List.of();
+    }
+
+    @Override
+    public List<Course> findAllCourserByNameOrDescription(String searchText) {
+        try{
+            String sql = "select * from courses where lower(name) like lower(?) or lower(description) like lower(?)";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            String searchPattern = "%" + searchText + "%";
+            preparedStatement.setString(1, searchPattern);
+            preparedStatement.setString(2, searchPattern);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            ArrayList<Course> courseList = new ArrayList<>();
+            while (resultSet.next()){
+                courseList.add(new Course(
+                        resultSet.getLong("id"),
+                        resultSet.getString("name"),
+                        resultSet.getString("description"),
+                        resultSet.getInt("hours"),
+                        resultSet.getDate("begindate"),
+                        resultSet.getDate("enddate"),
+                        CourseType.valueOf(resultSet.getString("coursetype"))
+                ));
+            }
+            return courseList;
+        }catch (SQLException e){
+            throw new DatabaseException(e.getMessage());
+        }
+    }
+
+    @Override
+    public List<Course> findAllCourserByStartDate(Date startDate) {
+        return List.of();
+    }
+
+    @Override
+    public List<Course> findAllRunningCourses() {
+        try{
+        String sql = "select * from courses where now()<enddate";
+        PreparedStatement preparedStatement = conn.prepareStatement(sql);
+        ResultSet rs = preparedStatement.executeQuery();
+        ArrayList<Course> courseList = new ArrayList<>();
+        while (rs.next()){
+            courseList.add(new Course(
+                    rs.getLong("id"),
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getInt("hours"),
+                    rs.getDate("begindate"),
+                    rs.getDate("enddate"),
+                    CourseType.valueOf(rs.getString("coursetype"))
+            ));
+        }
+        return courseList;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public List<Course> findAllCourserByCourseType(int courseType) {
+        return List.of();
+    }
+
+    @Override
+    public Optional<Course> insert(Course entity) {
+
+        Assert.notNull(entity);
+
+        try{
+            String query = "insert into courses (name, description, hours, begindate, enddate, coursetype) values (?,?,?,?,?,?)";
+            PreparedStatement preparedStatement= conn.prepareStatement(query,Statement.RETURN_GENERATED_KEYS);;
+            preparedStatement.setString(1, entity.getName());
+            preparedStatement.setString(2, entity.getDescription());
+            preparedStatement.setInt(3, entity.getHours());
+            preparedStatement.setDate(4, entity.getBeginDate());
+            preparedStatement.setDate(5, entity.getEndDate());
+            preparedStatement.setString(6, entity.getCourseType().toString());
+
+            int affectedRows = preparedStatement.executeUpdate();
+            if(affectedRows == 0){
+                return Optional.empty();
+            }
+            ResultSet generatedKeys = preparedStatement.getGeneratedKeys();
+            if(generatedKeys.next()){
+                return  this.getById(generatedKeys.getLong(1));
+            }else{
+                return Optional.empty();
+            }
+        }catch (SQLException sqlException){
+            throw new DatabaseException(sqlException.getMessage());
+        }
+    }
+
+    @Override
+    public Optional<Course> getById(Long id) throws SQLException {
+        Assert.notNull(id);
+        if(countCoursesInObWithId(id) == 0) {
+            return Optional.empty();
+        }
+        else{
+            try{
+                String query = "select * from courses where id = ?";
+                PreparedStatement preparedStatement =conn.prepareStatement(query);
+                preparedStatement.setLong(1, id);
+                ResultSet resultSet = preparedStatement.executeQuery();
+                resultSet.next();
+                Course course = new Course(
+                        resultSet.getLong("id"),
+                        resultSet.getString("name"),
+                        resultSet.getString("description"),
+                        resultSet.getInt("hours"),
+                        resultSet.getDate("begindate"),
+                        resultSet.getDate("enddate"),
+                        CourseType.valueOf(resultSet.getString("coursetype"))
+                );
+                return Optional.of(course);
+            }catch (SQLException e){
+                throw new DatabaseException("Fehler bei der Abfrage des Kurses mit der ID: " + id);
+            }
+        }
+    }
+    private int countCoursesInObWithId(Long id) {
+        try {
+            String sql = "select count(*) from courses where id = ?";
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setLong(1, id);
+            ResultSet rs = preparedStatement.executeQuery();
+            rs.next();
+            int courseCount = rs.getInt(1);
+            return courseCount;
+        } catch (SQLException e) {
+            throw new DatabaseException("Fehler bei der Abfrage der Kursanzahl mit der ID: " + id);
+        }
+    }
+
+    @Override
+    public List<Course> getAll() {
+        String sql = "select * from courses";
+        try {
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            ResultSet rs = preparedStatement.executeQuery();
+            ArrayList<Course> courseList = new ArrayList<>();
+            while (rs.next()) {
+                courseList.add(new Course(
+                        rs.getLong("id"),
+                        rs.getString("name"),
+                        rs.getString("description"),
+                        rs.getInt("hours"),
+                        rs.getDate("begindate"),
+                        rs.getDate("enddate"),
+                        CourseType.valueOf(rs.getString("coursetype"))
+                ));
+            }
+            return  courseList;
+        } catch (SQLException e) {
+            throw new DatabaseException("Fehler bei der Abfrage der Kurse");
+        }
+    }
+
+    @Override
+    public Optional<Course> update(Course entity) {
+        Assert.notNull(entity);
+        String sql = "update courses set name = ?, description = ?, hours = ?, begindate = ?, enddate = ?, coursetype = ? where id = ?";
+        if(countCoursesInObWithId(entity.getId()) == 0) {
+        return Optional.empty();} else {
+            try {
+                PreparedStatement preparedStatement = conn.prepareStatement(sql);
+                preparedStatement.setString(1, entity.getName());
+                preparedStatement.setString(2, entity.getDescription());
+                preparedStatement.setInt(3, entity.getHours());
+                preparedStatement.setDate(4, entity.getBeginDate());
+                preparedStatement.setDate(5, entity.getEndDate());
+                preparedStatement.setString(6, entity.getCourseType().toString());
+                preparedStatement.setLong(7, entity.getId());
+
+
+                int affectedRows = preparedStatement.executeUpdate();
+
+                if(affectedRows == 0){
+                    return Optional.empty();
+                }else {
+                    return this.getById(entity.getId());
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+
+        @Override
+    public void deleteById(Long id) {
+        Assert.notNull(id);
+        String sql = "delete from courses where id = ?";
+        try{
+        if(countCoursesInObWithId(id) == 1) {
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setLong(1, id);
+            preparedStatement.executeUpdate();
+        }
+        }catch (SQLException e){
+            throw new DatabaseException("Fehler beim Löschen des Kurses mit der ID: " + id);
+        }
+    }
+}
+package dataaccess;
+
+import domain.Course;
+
+import java.sql.Date;
+import java.util.List;
+
+//Zusatz 2 stufe DAO mit Spezifischen sachen für unsere DB
+
+public interface MyCourseRepository extends BaseRepository<Course, Long> {
+    List<Course> findAllCoutsesByName(String name);
+    List<Course> findAllCoutsesByDescription(String description);
+    List<Course> findAllCourserByNameOrDescription(String searchText);
+    List<Course> findAllCourserByStartDate(Date startDate);
+    List<Course> findAllRunningCourses();
+    List<Course> findAllCourserByCourseType(int courseType);
+}
+package dataaccess;
+
+public class DatabaseException extends RuntimeException {
+    public DatabaseException(String message) {
+        super(message);
+    }
+}
+package dataaccess;
+
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
+//BASIS 1 stufe DAO was für alle DB notwendig ist
+public interface BaseRepository<T,I> {
+    Optional<T> insert(T entity);
+    Optional<T> getById(I id) throws SQLException;
+    List<T> getAll();
+    Optional<T> update(T entity) throws SQLException;
+    void deleteById(I id);
+}
+```
+
 ## DAO Aufgabe 5 - Booking
 
 Leider hat Coopilot das nicht zu ende gebracht da ich nur begrentzte zugang habe
