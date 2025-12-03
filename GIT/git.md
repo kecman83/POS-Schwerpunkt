@@ -478,3 +478,29 @@ git clone git@gitlab.com:ivan2205137/ivan.git
 • Nicht so minimal wie GitHub Flow
 • Weniger Struktur als Git Flow für große Release-Prozesse
 • Erfordert Disziplin beim Mergen, damit die Historie sauber bleibt
+
+## Aufgabe 4
+
+- Clone Repository
+
+![](git1.png)
+
+- Merge Ivan Branch ins Main ohne Conflict
+
+![](merge1.png)
+
+- Merge Benedikt Branch ins Main mit Conflict
+
+![](conGitBasc.png)
+![](confflict.png)
+![](conflict2.png)
+![](connflict3.png)
+
+- Merge Confilcte gelöst
+
+![](conflic_solwed.png)
+
+- Repository Graf
+
+![](repositorygraf.png)
+![](grafVScode.png)
